@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -13,6 +14,7 @@ type Conf struct {
 	Port string `json:"port"`
 }
 
+// EasyInfo.MoreKey -> ImageInfo
 type ImageInfo struct {
 	Cid         string `json:"c_id"`
 	Oid         string `json:"o_id"`
@@ -27,6 +29,14 @@ type ImageInfo struct {
 	OriginUrl   string `json:"origin_url"`
 	OverseasUrl string `json:"overseas_url"`
 	DomesticUrl string `json:"domestic_url"`
+}
+
+// cid|url -> EasyInfo
+type EasyInfo struct {
+	Cid     string `json:"c_id"`
+	Curl    string `json:"c_url"`
+	Size    int64  `json:"size"`
+	MoreKey string `json:"-"`
 }
 
 var defaultPool *redis.Pool
@@ -52,12 +62,49 @@ func Init(cf *Conf) {
 	}
 }
 
-// 在缓存中添加一条日志
-func AddInfo() {
+func Get(key string) (string, error) {
+	if len(key) == 0 {
+		return "", fmt.Errorf("key is nil")
+	}
+
+	c := defaultPool.Get()
+	defer c.Close()
+
+	info, err := redis.String(c.Do("Get", key))
+	if err != nil {
+		return "", err
+	}
+	return info, nil
+}
+
+func GetEasyInfo(key string) (*EasyInfo, error) {
+	info, err := Get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	var easyInfo EasyInfo
+	if err := json.Unmarshal([]byte(info), &easyInfo); err != nil {
+		return nil, fmt.Errorf("get info err: %v, key: %s", err, key)
+	}
+	return &easyInfo, nil
+}
+
+func GetMoreInfo(key string) (*ImageInfo, error) {
+	info, err := Get(key)
+	if err != nil {
+		return nil, err
+	}
+
+	var moreInfo ImageInfo
+	if err := json.Unmarshal([]byte(info), &moreInfo); err != nil {
+		return nil, fmt.Errorf("get more info err: %v , key: %s", err, key)
+	}
+	return &moreInfo, nil
 }
 
 // 在缓存中读取日志
-func GetInfo(cUrl string) (string, int64, error) {
+func GetCreativeInfo(cUrl string) (string, int64, error) {
 	c := defaultPool.Get()
 	defer c.Close()
 
