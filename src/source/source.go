@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"loop"
 )
 
 // http://13.250.109.164:12222/creative?cid=img.21knofin2jnsnf & inurl= & furl= & pkgs=
@@ -58,13 +60,22 @@ func RequestCreative(url string) *Creative {
 		defer resp.Body.Close()
 	}
 	if err != nil {
-		log.Println("[RequestCreative] request err: ", err, " url: ", url)
+		log.Println("[RequestCreative] request get err: ", err, " url: ", url)
 		return nil
 	}
 
 	var cr CreativeResponse
 
 	err := json.NewDecoder(resp.Body).Decode(&cr)
+	if len(cr.ErrMsg) > 0 {
+		log.Println("[RequestCreative] request err: ", err, " url: ", url)
+		return nil
+	}
+	if len(cr.Creatives) == 1 {
+		return &cr.Creatives[0]
+	}
+	log.Printf("[RequestCreative] unknown err, %#v", cr)
+	return nil
 
 }
 
@@ -72,16 +83,22 @@ func GetWithCidOrUrl(cid, url string) *Creative {
 	var requestUrl = creativeCenterUrl
 	if len(cid) > 0 {
 		requestUrl += "cid=" + cid
+		return RequestCreative(requestUrl)
 	} else if len(url) > 0 {
 		w := whereUrl(url)
 		switch w {
 		case DOMESTIC_URL:
 			requestUrl += "inurl=" + url
+			return RequestCreative(requestUrl)
 		case OVERSEAS_URL:
 			requestUrl += "furl=" + url
+			return RequestCreative(requestUrl)
 		case OTHER_URL:
 			// 上传新连接
+			loop.AddUploadQueue(url)
 		default:
+			log.Println("[GetWithCidOrUrl] unknown url: ", url)
 		}
 	}
+	return nil
 }
