@@ -1,15 +1,15 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/brg-liuwei/gotools"
 
+	"cache"
 	"restful"
 )
 
 type Conf struct {
-	restfulConf *restful.Conf
+	RestfulConf *restful.Conf `json:"restful_conf"`
+	CacheConf   *cache.Conf   `json:"cache_conf"`
 }
 
 var conf Conf
@@ -19,7 +19,10 @@ func main() {
 		panic(err)
 	}
 
-	restfullService, err := restful.Init(&conf.restfulConf)
+	if err := cache.Init(conf.CacheConf); err != nil {
+		panic(err)
+	}
+	restfullService, err := restful.Init(conf.RestfulConf)
 	if err != nil {
 		panic(err)
 	}

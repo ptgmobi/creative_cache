@@ -3,7 +3,6 @@ package cache
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
@@ -33,15 +32,17 @@ type ImageInfo struct {
 
 // cid|url -> EasyInfo
 type EasyInfo struct {
-	Cid     string `json:"c_id"`
-	Curl    string `json:"c_url"`
+	Cid         string `json:"c_id"`
+	OverseasUrl string `json:"o_url"`
+	DemosticUrl string `json:"d_url"`
+
 	Size    int64  `json:"size"`
 	MoreKey string `json:"-"`
 }
 
 var defaultPool *redis.Pool
 
-func Init(cf *Conf) {
+func Init(cf *Conf) error {
 	defaultPool = &redis.Pool{
 		MaxIdle:     512,               // 最大的闲置链接
 		IdleTimeout: 300 * time.Second, // 闲置链接在多久后被关闭
@@ -60,6 +61,7 @@ func Init(cf *Conf) {
 			return err
 		},
 	}
+	return nil
 }
 
 func Get(key string) (string, error) {
@@ -75,6 +77,28 @@ func Get(key string) (string, error) {
 		return "", err
 	}
 	return info, nil
+}
+
+func Set(key, value string, expire int) error {
+	if len(key) == 0 || len(value) == 0 {
+		return fmt.Errorf("redis set key is nil")
+	}
+
+	if expire == 0 {
+		expire = 259200 // 60 * 60 * 24 * 3 // 三天
+	}
+
+	c := defaultPool.Get()
+	defer c.Close()
+
+	if err := c.Send("SET", key, value); err != nil {
+		return err
+	}
+	if err := c.Send("EXPIRE", key, expire); err != nil {
+		return err
+	}
+
+	return c.Flush()
 }
 
 func GetEasyInfo(key string) (*EasyInfo, error) {
@@ -101,22 +125,4 @@ func GetMoreInfo(key string) (*ImageInfo, error) {
 		return nil, fmt.Errorf("get more info err: %v , key: %s", err, key)
 	}
 	return &moreInfo, nil
-}
-
-// 在缓存中读取日志
-func GetCreativeInfo(cUrl string) (string, int64, error) {
-	c := defaultPool.Get()
-	defer c.Close()
-
-	cInfo, err := redis.String(c.Do("Get", cUrl))
-	if err != nil {
-		return "", 0, err
-	}
-
-	//TODO 拆解序列化字符串
-	info := strings.Split(cInfo, "_")
-	if len(info) != 2 {
-		return "", 0, errors.New("invalid info")
-	} else {
-	}
 }

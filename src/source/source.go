@@ -2,12 +2,9 @@ package source
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strings"
-
-	"loop"
 )
 
 // http://13.250.109.164:12222/creative?cid=img.21knofin2jnsnf & inurl= & furl= & pkgs=
@@ -66,7 +63,11 @@ func RequestCreative(url string) *Creative {
 
 	var cr CreativeResponse
 
-	err := json.NewDecoder(resp.Body).Decode(&cr)
+	if err := json.NewDecoder(resp.Body).Decode(&cr); err != nil {
+		log.Println("[RequestCreative] decode body err: ", err)
+		return nil
+	}
+
 	if len(cr.ErrMsg) > 0 {
 		log.Println("[RequestCreative] request err: ", err, " url: ", url)
 		return nil
@@ -79,7 +80,49 @@ func RequestCreative(url string) *Creative {
 
 }
 
-func GetWithCidOrUrl(cid, url string) *Creative {
+func uploadNewCreative(url, cType string, region int) *Creative {
+	type Info struct {
+		Url    string `json:"url"`
+		CType  string `json:"type"`
+		Region int    `json:"region"`
+	}
+
+	var info = Info{
+		Url:    url,
+		CType:  cType,
+		Region: region,
+	}
+	body, _ := json.Marshal(&info)
+
+	resp, err := http.Post(
+		creativeCenterUrl,
+		"application/json",
+		strings.NewReader(string(body)),
+	)
+	if err != nil {
+		log.Println("[uploadNewCreative] post err: ", err)
+		return nil
+	}
+	defer resp.Body.Close()
+
+	var cr CreativeResponse
+
+	if err := json.NewDecoder(resp.Body).Decode(&cr); err != nil {
+		log.Println("[uploadNewCreative] decode body err: ", err)
+		return nil
+	}
+	if len(cr.ErrMsg) > 0 {
+		log.Println("[uploadNewCreative] response err: ", err)
+		return nil
+	}
+	if len(cr.Creatives) == 1 {
+		return &cr.Creatives[0]
+	}
+	log.Println("[uploadNewCreative] no creative")
+	return nil
+}
+
+func GetWithCidOrUrl(cid, url, cType string, region int) *Creative {
 	var requestUrl = creativeCenterUrl
 	if len(cid) > 0 {
 		requestUrl += "cid=" + cid
@@ -94,8 +137,7 @@ func GetWithCidOrUrl(cid, url string) *Creative {
 			requestUrl += "furl=" + url
 			return RequestCreative(requestUrl)
 		case OTHER_URL:
-			// 上传新连接
-			loop.AddUploadQueue(url)
+			return uploadNewCreative(url, cType, region)
 		default:
 			log.Println("[GetWithCidOrUrl] unknown url: ", url)
 		}
