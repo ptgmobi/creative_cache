@@ -17,7 +17,7 @@ deps:
 	${GOGET} github.com/brg-liuwei/gotools
 
 test:
-	pushd src/test && ${GOTEST} && popd
+	pushd src/loop && ${GOTEST} && popd
 
 clean:
 	${RM} bin/* ${VARS}

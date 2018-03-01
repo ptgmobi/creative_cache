@@ -21,6 +21,7 @@ type creativeInfo struct {
 
 func Init() error {
 	loopQueue = NewQueue()
+	go LoopQueue()
 	return nil
 }
 
@@ -74,7 +75,7 @@ func LoopQueue() {
 			return
 		}
 		// 数据库里查询
-		for ciInter := copyQueue.Top(); ciInter != nil; {
+		for ciInter := copyQueue.Top(); ciInter != nil; ciInter = copyQueue.Top() {
 			ci, ok := ciInter.(creativeInfo)
 			if !ok {
 				log.Printf("[LoopQueue] queue elem err, type is %s", reflect.TypeOf(ci).Name())
@@ -86,7 +87,8 @@ func LoopQueue() {
 				log.Println("LoopQueue get info with url failed! url: ", ci.url)
 			}
 			// 将简化信息写入redis
-			if err := cache.Set(creative.Cid, SerializeEasyInfo(creative), 259200); err != nil {
+			if err := cache.Set(ci.url, SerializeEasyInfo(creative), 259200); err != nil {
+				//if err := cache.Set(creative.Cid, SerializeEasyInfo(creative), 259200); err != nil {
 				log.Println("LoopQueue set redis err: ", err, " cid: ", creative.Cid)
 				continue
 			}

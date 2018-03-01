@@ -47,7 +47,7 @@ func Init(cf *Conf) error {
 		MaxIdle:     512,               // 最大的闲置链接
 		IdleTimeout: 300 * time.Second, // 闲置链接在多久后被关闭
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.DialURL(cf.Host + ":" + cf.Port)
+			c, err := redis.Dial("tcp", cf.Host+":"+cf.Port)
 			if err != nil {
 				return nil, err
 			}

@@ -82,7 +82,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var regionInt int
-	cUrl, err := url.QueryUnescape(r.Form.Get("creative_url"))
+	cUrl, err := url.QueryUnescape(r.Form.Get("curl"))
 	cType := r.Form.Get("ctype")   // img:图片， mp4：视频
 	region := r.Form.Get("region") // 1: 国内， 2：非国内, 3:国内外 默认3
 	if len(region) == 0 {
@@ -94,7 +94,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 			regionInt = 3
 		}
 	}
-	cId := r.Form.Get("c_id")
+	cId := r.Form.Get("cid")
 
 	getInfo := func(key string, isUrl bool) *SearchResp {
 		easyInfo, err := cache.GetEasyInfo(key)
@@ -141,7 +141,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) Server() {
-	http.HandleFunc("/cid/get_creative_id", s.HandleSearch)
+	http.HandleFunc("/cache/get_cid", s.HandleSearch)
 
 	panic(http.ListenAndServe(":12121", nil))
 }

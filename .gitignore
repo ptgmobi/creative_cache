@@ -7,3 +7,4 @@ conf/*.conf
 bin/
 start.sh
 *.mk
+*.log

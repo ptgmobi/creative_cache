@@ -103,10 +103,7 @@ func (q *Queue) CopyQueue() *Queue {
 			copy.Add(elem)
 		}
 	}
-	if copy.Length() > 0 {
-		return copy
-	}
-	return nil
+	return copy
 }
 
 func (q *Queue) Remove() interface{} {
