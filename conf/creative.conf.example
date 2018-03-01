@@ -1,0 +1,11 @@
+{
+    "restful_conf": {
+        "log_path": "logs/restful.log",
+        "log_rotate_backup": 8,
+        "log_rotate_lines": 100000
+    },
+    "cache_conf": {
+        "host": "127.0.0.1",
+        "port": "6379"
+    }
+}
