@@ -15,6 +15,7 @@ main:
 
 deps:
 	${GOGET} github.com/brg-liuwei/gotools
+	${GOGET} github.com/garyburd/redigo/redis
 
 test:
 	pushd src/loop && ${GOTEST} && popd
