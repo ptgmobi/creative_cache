@@ -9,8 +9,8 @@ import (
 
 // http://13.250.109.164:12222/creative?cid=img.21knofin2jnsnf & inurl= & furl= & pkgs=
 
-var creativeCenterUrl = "http://13.250.109.164:12222/creative?"
-var domesticUrl = "cloudmobi-creative-center.s3.cn-north"
+var creativeCenterUrl = "http://127.0.0.1:12222/creative?"
+var domesticUrl = "cdn.cn.ctcnpa.com"
 var overseasUrl = "cloudmobi-creative-center.s3.ap-southeast"
 
 const (
@@ -112,7 +112,7 @@ func uploadNewCreative(url, cType string, region int) *Creative {
 		return nil
 	}
 	if len(cr.ErrMsg) > 0 {
-		log.Println("[uploadNewCreative] response err: ", err)
+		log.Println("[uploadNewCreative] response err: ", cr.ErrMsg)
 		return nil
 	}
 	if len(cr.Creatives) == 1 {
