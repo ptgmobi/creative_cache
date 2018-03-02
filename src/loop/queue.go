@@ -25,9 +25,8 @@ func (q *Queue) Length() int {
 	return q.count
 }
 
+// 保内函数，在调用的函数里要注意上锁
 func (q *Queue) resize() {
-	q.l.Lock()
-	defer q.l.Unlock()
 
 	newBuf := make([]interface{}, q.count<<1)
 

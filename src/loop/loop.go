@@ -83,13 +83,15 @@ func LoopQueue() {
 
 			}
 			creative := source.GetWithCidOrUrl("", ci.url, ci.cType, ci.region)
+			log.Println("[LoopQueue] get info with url: ", ci.url, " type: ", ci.cType, " region: ", ci.region, " queueSize:", copyQueue.Length())
 			if creative == nil {
-				log.Println("LoopQueue get info with url failed! url: ", ci.url)
+				log.Println("[LoopQueue] get info with url failed! url: ", ci.url)
+				continue
 			}
 			// 将简化信息写入redis
-			if err := cache.Set(ci.url, SerializeEasyInfo(creative), 259200); err != nil {
+			if err := cache.Set(ci.url, SerializeEasyInfo(creative), 172800); err != nil {
 				//if err := cache.Set(creative.Cid, SerializeEasyInfo(creative), 259200); err != nil {
-				log.Println("LoopQueue set redis err: ", err, " cid: ", creative.Cid)
+				log.Println("[LoopQueue] set redis err: ", err, " cid: ", creative.Cid)
 				continue
 			}
 		}

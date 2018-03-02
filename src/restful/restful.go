@@ -83,6 +83,12 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 
 	var regionInt int
 	cUrl, err := url.QueryUnescape(r.Form.Get("curl"))
+	if err != nil {
+		s.l.Println("HandleSearch QueryUnescape curl err: ", err, " url: ", r.Form.Get("curl"))
+		if _, err := NewSearchResp("url can't unescape", "", "", "", 0, nil).WriteTo(w); err != nil {
+			s.l.Println("[Search] fail to response get creative_url error: ", err)
+		}
+	}
 	cType := r.Form.Get("ctype")   // img:图片， mp4：视频
 	region := r.Form.Get("region") // 1: 国内， 2：非国内, 3:国内外 默认3
 	if len(region) == 0 {
@@ -132,7 +138,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	} else {
-		s.l.Println("[Search] can't get creative_url or cid, err :", err)
+		s.l.Println("[Search] can't get creative_url or cid, cid:", cId, " ctype: ", cType, " url: ", cUrl)
 		if _, err := NewSearchResp("can't get creative_url or cid", "", "", "", 0, nil).WriteTo(w); err != nil {
 			s.l.Println("[Search] fail to response get creative_url error: ", err)
 		}
