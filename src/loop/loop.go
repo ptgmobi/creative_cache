@@ -55,7 +55,7 @@ func SerializeEasyInfo(c *source.Creative) string {
 		Cid:         c.Cid,
 		Oid:         c.Oid,
 		OverseasUrl: c.OverseasUrl,
-		DemosticUrl: c.DemosticUrl,
+		DomesticUrl: c.DomesticUrl,
 		Size:        c.Size,
 	}
 

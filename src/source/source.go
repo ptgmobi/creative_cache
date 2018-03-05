@@ -33,7 +33,7 @@ type Creative struct {
 	Format       string   `json:"format"`
 	OriginUrl    string   `json:"origin_url"`
 	OverseasUrl  string   `json:"overseas_url"`
-	DemosticUrl  string   `json:"demostic_url"`
+	DomesticUrl  string   `json:"domestic_url"`
 }
 
 type CreativeResponse struct {

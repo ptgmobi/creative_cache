@@ -32,7 +32,7 @@ type SearchResp struct {
 	CreativeId    string `json:"creative_id"`
 	CreativeOldId string `json:"creative_old_id"`
 	OverseasUrl   string `json:"overseas_url"`
-	DemosticUrl   string `json:"demostic_url"`
+	DomesticUrl   string `json:"domestic_url"`
 	Size          int64  `json:"size"`
 
 	MoreInfo *cache.ImageInfo `json:"more_info,omitempty"`
@@ -49,7 +49,7 @@ func NewSearchResp(errMsg, cId, oId, oUrl, dUrl string, cSize int64, moreInfo *c
 		CreativeId:    cId,
 		CreativeOldId: oId,
 		OverseasUrl:   oUrl,
-		DemosticUrl:   dUrl,
+		DomesticUrl:   dUrl,
 		Size:          cSize,
 		MoreInfo:      moreInfo,
 	}
@@ -116,7 +116,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 				} else {
 					// 数据库中查询
 					if c := source.GetWithCidOrUrl(key, "", cType, regionInt); c != nil {
-						return NewSearchResp("", c.Cid, c.Oid, c.OverseasUrl, c.DemosticUrl, c.Size, nil)
+						return NewSearchResp("", c.Cid, c.Oid, c.OverseasUrl, c.DomesticUrl, c.Size, nil)
 					}
 				}
 				return NewSearchResp("no info", "", "", "", "", 0, nil)
@@ -126,7 +126,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		return NewSearchResp("", easyInfo.Cid, easyInfo.Oid, easyInfo.OverseasUrl, easyInfo.DemosticUrl, easyInfo.Size, nil)
+		return NewSearchResp("", easyInfo.Cid, easyInfo.Oid, easyInfo.OverseasUrl, easyInfo.DomesticUrl, easyInfo.Size, nil)
 	}
 
 	if len(cUrl) > 0 && len(cType) > 0 { // 根据url查询
