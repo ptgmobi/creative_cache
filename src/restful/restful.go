@@ -116,7 +116,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 				} else {
 					// 数据库中查询
 					if c := source.GetWithCidOrUrl(key, "", cType, regionInt); c != nil {
-						return NewSearchResp("", c.Oid, c.Cid, c.OverseasUrl, c.DemosticUrl, c.Size, nil)
+						return NewSearchResp("", c.Cid, c.Oid, c.OverseasUrl, c.DemosticUrl, c.Size, nil)
 					}
 				}
 				return NewSearchResp("no info", "", "", "", "", 0, nil)
@@ -126,7 +126,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		return NewSearchResp("", easyInfo.Oid, easyInfo.Cid, easyInfo.OverseasUrl, easyInfo.DemosticUrl, easyInfo.Size, nil)
+		return NewSearchResp("", easyInfo.Cid, easyInfo.Oid, easyInfo.OverseasUrl, easyInfo.DemosticUrl, easyInfo.Size, nil)
 	}
 
 	if len(cUrl) > 0 && len(cType) > 0 { // 根据url查询
