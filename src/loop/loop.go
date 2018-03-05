@@ -53,6 +53,7 @@ func TopUploadQueue() (interface{}, error) {
 func SerializeEasyInfo(c *source.Creative) string {
 	ei := cache.EasyInfo{
 		Cid:         c.Cid,
+		Oid:         c.Oid,
 		OverseasUrl: c.OverseasUrl,
 		DemosticUrl: c.DemosticUrl,
 		Size:        c.Size,
@@ -89,7 +90,7 @@ func LoopQueue() {
 				continue
 			}
 			// 将简化信息写入redis
-			if err := cache.Set(ci.url, SerializeEasyInfo(creative), 172800); err != nil {
+			if err := cache.Set(ci.url, SerializeEasyInfo(creative), 432000); err != nil {
 				//if err := cache.Set(creative.Cid, SerializeEasyInfo(creative), 259200); err != nil {
 				log.Println("[LoopQueue] set redis err: ", err, " cid: ", creative.Cid)
 				continue

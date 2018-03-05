@@ -28,11 +28,12 @@ type Service struct {
 }
 
 type SearchResp struct {
-	ErrMsg      string `json:"err_msg"`
-	CreativeId  string `json:"creative_id"`
-	OverseasUrl string `json:"overseas_url"`
-	DemosticUrl string `json:"demostic_url"`
-	Size        int64  `json:"size"`
+	ErrMsg        string `json:"err_msg"`
+	CreativeId    string `json:"creative_id"`
+	CreativeOldId string `json:"creative_old_id"`
+	OverseasUrl   string `json:"overseas_url"`
+	DemosticUrl   string `json:"demostic_url"`
+	Size          int64  `json:"size"`
 
 	MoreInfo *cache.ImageInfo `json:"more_info,omitempty"`
 }
@@ -42,14 +43,15 @@ func (sr *SearchResp) WriteTo(w http.ResponseWriter) (int, error) {
 	return w.Write(b)
 }
 
-func NewSearchResp(errMsg, cId, oUrl, dUrl string, cSize int64, moreInfo *cache.ImageInfo) *SearchResp {
+func NewSearchResp(errMsg, cId, oId, oUrl, dUrl string, cSize int64, moreInfo *cache.ImageInfo) *SearchResp {
 	return &SearchResp{
-		ErrMsg:      errMsg,
-		CreativeId:  cId,
-		OverseasUrl: oUrl,
-		DemosticUrl: dUrl,
-		Size:        cSize,
-		MoreInfo:    moreInfo,
+		ErrMsg:        errMsg,
+		CreativeId:    cId,
+		CreativeOldId: oId,
+		OverseasUrl:   oUrl,
+		DemosticUrl:   dUrl,
+		Size:          cSize,
+		MoreInfo:      moreInfo,
 	}
 }
 
@@ -75,7 +77,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	if err := r.ParseForm(); err != nil {
 		s.l.Println("[Search] ParseForm err: ", err)
-		if _, err := NewSearchResp("server err", "", "", "", 0, nil).WriteTo(w); err != nil {
+		if _, err := NewSearchResp("server err", "", "", "", "", 0, nil).WriteTo(w); err != nil {
 			s.l.Println("[Search] server error: ", err)
 		}
 		return
@@ -85,7 +87,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 	cUrl, err := url.QueryUnescape(r.Form.Get("curl"))
 	if err != nil {
 		s.l.Println("HandleSearch QueryUnescape curl err: ", err, " url: ", r.Form.Get("curl"))
-		if _, err := NewSearchResp("url can't unescape", "", "", "", 0, nil).WriteTo(w); err != nil {
+		if _, err := NewSearchResp("url can't unescape", "", "", "", "", 0, nil).WriteTo(w); err != nil {
 			s.l.Println("[Search] fail to response get creative_url error: ", err)
 		}
 	}
@@ -114,17 +116,17 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 				} else {
 					// 数据库中查询
 					if c := source.GetWithCidOrUrl(key, "", cType, regionInt); c != nil {
-						return NewSearchResp("", c.Cid, c.OverseasUrl, c.DemosticUrl, c.Size, nil)
+						return NewSearchResp("", c.Oid, c.Cid, c.OverseasUrl, c.DemosticUrl, c.Size, nil)
 					}
 				}
-				return NewSearchResp("no info", "", "", "", 0, nil)
+				return NewSearchResp("no info", "", "", "", "", 0, nil)
 			} else {
 				s.l.Printf("[Search] get easy info err: %v, key: %s", err, key)
-				return NewSearchResp("get easy info err", "", "", "", 0, nil)
+				return NewSearchResp("get easy info err", "", "", "", "", 0, nil)
 			}
 		}
 
-		return NewSearchResp("", easyInfo.Cid, easyInfo.OverseasUrl, easyInfo.DemosticUrl, easyInfo.Size, nil)
+		return NewSearchResp("", easyInfo.Oid, easyInfo.Cid, easyInfo.OverseasUrl, easyInfo.DemosticUrl, easyInfo.Size, nil)
 	}
 
 	if len(cUrl) > 0 && len(cType) > 0 { // 根据url查询
@@ -139,7 +141,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	} else {
 		s.l.Println("[Search] can't get creative_url or cid, cid:", cId, " ctype: ", cType, " url: ", cUrl)
-		if _, err := NewSearchResp("can't get creative_url or cid", "", "", "", 0, nil).WriteTo(w); err != nil {
+		if _, err := NewSearchResp("can't get creative_url or cid", "", "", "", "", 0, nil).WriteTo(w); err != nil {
 			s.l.Println("[Search] fail to response get creative_url error: ", err)
 		}
 		return

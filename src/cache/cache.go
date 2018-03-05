@@ -33,6 +33,7 @@ type ImageInfo struct {
 // cid|url -> EasyInfo
 type EasyInfo struct {
 	Cid         string `json:"c_id"`
+	Oid         string `json:"o_id"`
 	OverseasUrl string `json:"o_url"`
 	DemosticUrl string `json:"d_url"`
 
