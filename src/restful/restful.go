@@ -86,10 +86,11 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 	var regionInt int
 	cUrlBytes, err := base64.StdEncoding.DecodeString(r.Form.Get("curl"))
 	if err != nil {
-		s.l.Println("HandleSearch QueryUnescape curl err: ", err, " url: ", r.Form.Get("curl"))
-		if _, err := NewSearchResp("url can't unescape", "", "", "", "", 0, nil).WriteTo(w); err != nil {
+		s.l.Println("HandleSearch base64 decode curl err: ", err, " url: ", r.Form.Get("curl"))
+		if _, err := NewSearchResp("url can't base64 decode", "", "", "", "", 0, nil).WriteTo(w); err != nil {
 			s.l.Println("[Search] fail to response get creative_url error: ", err)
 		}
+		return
 	}
 	cUrl := string(cUrlBytes)
 	cType := r.Form.Get("ctype")   // img:图片， mp4：视频
