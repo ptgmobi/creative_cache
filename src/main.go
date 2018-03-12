@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/brg-liuwei/gotools"
+	_ "net/http/pprof"
 
 	"cache"
 	"loop"
