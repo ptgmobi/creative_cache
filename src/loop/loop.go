@@ -32,7 +32,7 @@ func AddUploadQueue(url, cType string, region int) error {
 	if loopQueue == nil {
 		return fmt.Errorf("loopQueue is nil, add error")
 	}
-	ci := creativeInfo{
+	ci := &creativeInfo{
 		url:    url,
 		cType:  cType,
 		region: region,
@@ -77,7 +77,7 @@ func LoopQueue() {
 		}
 		// 数据库里查询
 		for ciInter := copyQueue.Top(); ciInter != nil; ciInter = copyQueue.Top() {
-			ci, ok := ciInter.(creativeInfo)
+			ci, ok := ciInter.(*creativeInfo)
 			if !ok {
 				log.Printf("[LoopQueue] queue elem err, type is %s", reflect.TypeOf(ci).Name())
 				continue
