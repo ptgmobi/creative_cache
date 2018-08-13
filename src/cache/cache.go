@@ -77,6 +77,12 @@ func Get(key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	var expire = 432000 // 60 * 60 * 24 * 5 // 五天
+	if err := c.Send("EXPIRE", key, expire); err != nil {
+		return "", err
+	}
+
 	return info, nil
 }
 
@@ -86,7 +92,7 @@ func Set(key, value string, expire int) error {
 	}
 
 	if expire == 0 {
-		expire = 259200 // 60 * 60 * 24 * 3 // 三天
+		expire = 432000 // 60 * 60 * 24 * 5 // 五天
 	}
 
 	c := defaultPool.Get()
