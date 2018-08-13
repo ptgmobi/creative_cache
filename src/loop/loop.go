@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"reflect"
+	"sync"
 	"time"
 
 	"cache"
@@ -12,6 +13,7 @@ import (
 )
 
 var loopQueue *Queue
+var waitGroup sync.WaitGroup
 
 type creativeInfo struct {
 	url    string // 素材链接
@@ -83,23 +85,33 @@ func LoopQueue() {
 				continue
 
 			}
-			creative := source.GetWithCidOrUrl("", ci.url, ci.cType, ci.region)
-			log.Println("[LoopQueue] get info with url: ", ci.url, " type: ", ci.cType, " region: ", ci.region, " queueSize:", copyQueue.Length())
-			if creative == nil {
-				log.Println("[LoopQueue] get info with url failed! url: ", ci.url)
-				continue
+
+			// 起4个线程去上传
+			for copyQueue.Length()%4 == 0 {
+				waitGroup.Wait()
 			}
-			// 将简化信息写入redis
-			if err := cache.Set(ci.url, SerializeEasyInfo(creative), 432000); err != nil {
-				//if err := cache.Set(creative.Cid, SerializeEasyInfo(creative), 259200); err != nil {
-				log.Println("[LoopQueue] set redis err: ", err, " cid: ", creative.Cid)
-				continue
-			}
+
+			waitGroup.Add(1)
+			go func() {
+				creative := source.GetWithCidOrUrl("", ci.url, ci.cType, ci.region)
+				log.Println("[LoopQueue] get info with url: ", ci.url, " type: ", ci.cType, " region: ", ci.region, " queueSize:", copyQueue.Length())
+				if creative == nil {
+					log.Println("[LoopQueue] get info with url failed! url: ", ci.url)
+					return
+				}
+				// 将简化信息写入redis
+				if err := cache.Set(ci.url, SerializeEasyInfo(creative), 432000); err != nil {
+					//if err := cache.Set(creative.Cid, SerializeEasyInfo(creative), 259200); err != nil {
+					log.Println("[LoopQueue] set redis err: ", err, " cid: ", creative.Cid)
+					return
+				}
+			}()
+
 		}
 	}
 
 	for {
 		update()
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 1)
 	}
 }

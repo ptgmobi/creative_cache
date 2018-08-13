@@ -110,12 +110,16 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 		easyInfo, err := cache.GetEasyInfo(key)
 		if err != nil {
 			if err.Error() == ErrNil { // 没有相关信息
-				if isUrl {
-					// 添加到缓存中
+				if isUrl { // url查询
+					// 数据库查询
+					if c := source.GetWithCidOrUrl("", key, cType, regionInt); c != nil {
+						return NewSearchResp("", c.Cid, c.Oid, c.OverseasUrl, c.DomesticUrl, c.Size, nil)
+					}
+					// 添加到缓存队列中
 					if err := loop.AddUploadQueue(key, cType, regionInt); err != nil {
 						s.l.Printf("[Search] add Upload queue err: %v, key:%s", err, key)
 					}
-				} else {
+				} else { // cid 查询
 					// 数据库中查询
 					if c := source.GetWithCidOrUrl(key, "", cType, regionInt); c != nil {
 						return NewSearchResp("", c.Cid, c.Oid, c.OverseasUrl, c.DomesticUrl, c.Size, nil)
