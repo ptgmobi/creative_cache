@@ -84,9 +84,17 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var regionInt int
-	cUrlBytes, err := base64.StdEncoding.DecodeString(r.Form.Get("curl"))
+	base64Url := r.Form.Get("curl")
+	if len(base64Url) == 0 {
+		if _, err := NewSearchResp("url is nil", "", "", "", "", 0, nil).WriteTo(w); err != nil {
+			s.l.Println("[Search] fail to response get c_url error: ", err)
+		}
+		return
+	}
+
+	cUrlBytes, err := base64.StdEncoding.DecodeString(base64Url)
 	if err != nil {
-		s.l.Println("HandleSearch base64 decode curl err: ", err, " url: ", r.Form.Get("curl"))
+		s.l.Println("HandleSearch base64 decode curl err: ", err, " url: ", base64Url)
 		if _, err := NewSearchResp("url can't base64 decode", "", "", "", "", 0, nil).WriteTo(w); err != nil {
 			s.l.Println("[Search] fail to response get creative_url error: ", err)
 		}
@@ -112,7 +120,7 @@ func (s *Service) HandleSearch(w http.ResponseWriter, r *http.Request) {
 			if err.Error() == ErrNil { // 没有相关信息
 				if isUrl { // url查询
 					// 数据库查询
-					if c := source.GetWithCidOrUrl("", key, cType, regionInt); c != nil {
+					if c := source.SearchWithUrl(base64Url); c != nil {
 						return NewSearchResp("", c.Cid, c.Oid, c.OverseasUrl, c.DomesticUrl, c.Size, nil)
 					}
 					// 添加到缓存队列中

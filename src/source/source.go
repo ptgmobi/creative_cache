@@ -5,11 +5,14 @@ import (
 	"log"
 	"net/http"
 	"strings"
+
+	"cache"
 )
 
 // http://13.250.109.164:12222/creative?cid=img.21knofin2jnsnf & inurl= & furl= & pkgs=
 
 var creativeCenterUrl = "http://127.0.0.1:12222/creative?"
+var creativeSearchUrl = "http://127.0.0.1:12222/search/url?"
 var domesticUrl = "cdn.cn.ctcnpa.com"
 var overseasUrl = "cloudmobi-creative-center.s3.ap-southeast"
 
@@ -69,7 +72,7 @@ func RequestCreative(url string) *Creative {
 	}
 
 	if len(cr.ErrMsg) > 0 {
-		log.Println("[RequestCreative] request err: ", err, " url: ", url)
+		log.Println("[RequestCreative] request err: ", cr.ErrMsg, " url: ", url)
 		return nil
 	}
 	if len(cr.Creatives) == 1 {
@@ -143,4 +146,35 @@ func GetWithCidOrUrl(cid, url, cType string, region int) *Creative {
 		}
 	}
 	return nil
+}
+
+func (c *Creative) SerializeEasyInfo() string {
+	ei := cache.EasyInfo{
+		Cid:         c.Cid,
+		Oid:         c.Oid,
+		OverseasUrl: c.OverseasUrl,
+		DomesticUrl: c.DomesticUrl,
+		Size:        c.Size,
+	}
+
+	eiBytes, err := json.Marshal(&ei)
+	if err != nil {
+		log.Println("SerializeEasyInfo marshal err: ", err, " cid: ", c.Cid)
+		return ""
+	}
+	return string(eiBytes)
+
+}
+
+func SearchWithUrl(cUrl string) *Creative {
+	var requestUrl = creativeSearchUrl
+	url := requestUrl + "ourl=" + cUrl
+	c := RequestCreative(url)
+	if c != nil {
+		// 将简化信息写入redis
+		if err := cache.Set(c.OriginUrl, c.SerializeEasyInfo(), 432000); err != nil {
+			log.Println("[SearchWithUrl] set redis err: ", err, " cid: ", c.Cid)
+		}
+	}
+	return c
 }
