@@ -1,10 +1,10 @@
 package loop
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"reflect"
+	"sync"
 	"time"
 
 	"cache"
@@ -12,6 +12,7 @@ import (
 )
 
 var loopQueue *Queue
+var waitGroup sync.WaitGroup
 
 type creativeInfo struct {
 	url    string // 素材链接
@@ -50,24 +51,6 @@ func TopUploadQueue() (interface{}, error) {
 	return loopQueue.Top(), nil
 }
 
-func SerializeEasyInfo(c *source.Creative) string {
-	ei := cache.EasyInfo{
-		Cid:         c.Cid,
-		Oid:         c.Oid,
-		OverseasUrl: c.OverseasUrl,
-		DomesticUrl: c.DomesticUrl,
-		Size:        c.Size,
-	}
-
-	eiBytes, err := json.Marshal(&ei)
-	if err != nil {
-		log.Println("SerializeEasyInfo marshal err: ", err, " cid: ", c.Cid)
-		return ""
-	}
-	return string(eiBytes)
-
-}
-
 func LoopQueue() {
 	update := func() {
 		copyQueue := loopQueue.CopyQueue()
@@ -83,23 +66,34 @@ func LoopQueue() {
 				continue
 
 			}
-			creative := source.GetWithCidOrUrl("", ci.url, ci.cType, ci.region)
-			log.Println("[LoopQueue] get info with url: ", ci.url, " type: ", ci.cType, " region: ", ci.region, " queueSize:", copyQueue.Length())
-			if creative == nil {
-				log.Println("[LoopQueue] get info with url failed! url: ", ci.url)
-				continue
+
+			// 起4个线程去上传
+			if copyQueue.Length()%4 == 0 {
+				waitGroup.Wait()
 			}
-			// 将简化信息写入redis
-			if err := cache.Set(ci.url, SerializeEasyInfo(creative), 432000); err != nil {
-				//if err := cache.Set(creative.Cid, SerializeEasyInfo(creative), 259200); err != nil {
-				log.Println("[LoopQueue] set redis err: ", err, " cid: ", creative.Cid)
-				continue
-			}
+
+			waitGroup.Add(1)
+			go func(wg *sync.WaitGroup) {
+				defer wg.Done()
+				creative := source.GetWithCidOrUrl("", ci.url, ci.cType, ci.region)
+				log.Println("[LoopQueue] get info with url: ", ci.url, " type: ", ci.cType, " region: ", ci.region, " queueSize:", copyQueue.Length())
+				if creative == nil {
+					log.Println("[LoopQueue] get info with url failed! url: ", ci.url)
+					return
+				}
+
+				// 将简化信息写入redis
+				if err := cache.Set(ci.url, creative.SerializeEasyInfo(), 432000); err != nil {
+					log.Println("[LoopQueue] set redis err: ", err, " cid: ", creative.Cid)
+					return
+				}
+			}(&waitGroup)
+
 		}
 	}
 
 	for {
 		update()
-		time.Sleep(time.Second * 5)
+		time.Sleep(time.Second * 3)
 	}
 }
